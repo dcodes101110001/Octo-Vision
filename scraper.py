@@ -73,7 +73,13 @@ class PasteScraper:
                     continue
                     
         except Exception as e:
-            print(f"Error accessing Pastebin: {e}")
+            pastes.append({
+                'id': '',
+                'title': 'Error accessing Pastebin',
+                'content': '',
+                'url': '',
+                'error': str(e)
+            })
         
         return pastes
     
