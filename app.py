@@ -8,6 +8,9 @@ import pandas as pd
 from scraper import PasteScraper
 from scanner import KeywordScanner
 
+# Constants
+MAX_DISPLAY_CHARS = 5000  # Maximum characters to display in content preview
+
 # Page configuration
 st.set_page_config(
     page_title="Octo-Vision - Paste Site Scraper",
@@ -192,18 +195,18 @@ with col2:
                 with st.expander("View full paste content"):
                     content = result.get('content', '')
                     content_length = len(content)
-                    display_length = min(content_length, 5000)
+                    display_length = min(content_length, MAX_DISPLAY_CHARS)
                     
                     st.caption(f"Content length: {content_length:,} characters")
                     
                     st.text_area(
                         "Content",
-                        value=content[:5000],  # Limit to first 5000 chars for display
+                        value=content[:MAX_DISPLAY_CHARS],
                         height=300,
                         disabled=True,
                         key=f"content_{idx}"
                     )
-                    if content_length > 5000:
+                    if content_length > MAX_DISPLAY_CHARS:
                         st.warning(f"⚠️ Content truncated: showing first {display_length:,} of {content_length:,} characters ({(display_length/content_length)*100:.1f}%)")
         
         # Export results

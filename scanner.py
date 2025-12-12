@@ -128,11 +128,12 @@ class KeywordScanner:
             except Exception:
                 # Fallback to simple string search with manual case handling
                 if self.case_sensitive:
-                    if keyword in text:
+                    # Count occurrences first
+                    count = text.count(keyword)
+                    if count > 0:
                         matched_keywords.add(keyword)
-                        # Count all occurrences in fallback mode
-                        count = text.count(keyword)
                         total_occurrences += count
+                        # Find first occurrence for context
                         index = text.find(keyword)
                         start = max(0, index - 50)
                         end = min(len(text), index + len(keyword) + 50)
@@ -148,11 +149,12 @@ class KeywordScanner:
                     search_keyword = keyword.lower()
                     text_lower = text.lower()
                     
-                    if search_keyword in text_lower:
+                    # Count occurrences first
+                    count = text_lower.count(search_keyword)
+                    if count > 0:
                         matched_keywords.add(keyword)
-                        # Count all occurrences in fallback mode
-                        count = text_lower.count(search_keyword)
                         total_occurrences += count
+                        # Find first occurrence for context
                         index = text_lower.find(search_keyword)
                         start = max(0, index - 50)
                         end = min(len(text), index + len(keyword) + 50)
@@ -185,8 +187,8 @@ class KeywordScanner:
         results = []
         
         for text_info in texts:
-            # Skip entries that have errors (no content)
-            if 'error' in text_info or not text_info.get('content'):
+            # Skip entries that have errors
+            if 'error' in text_info:
                 continue
                 
             content = text_info.get('content', '')
