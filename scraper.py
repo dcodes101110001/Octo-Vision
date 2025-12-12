@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List, Dict
 import time
+from urllib.parse import urlparse
 
 
 class PasteScraper:
@@ -93,6 +94,34 @@ class PasteScraper:
         Returns:
             Dictionary containing paste information
         """
+        # Validate URL to prevent SSRF attacks
+        try:
+            parsed_url = urlparse(url)
+            allowed_domains = ['pastebin.com', 'www.pastebin.com']
+            
+            if not parsed_url.scheme in ['http', 'https']:
+                return {
+                    'url': url,
+                    'content': '',
+                    'error': 'Invalid URL scheme. Only HTTP and HTTPS are allowed.',
+                    'title': 'Error'
+                }
+            
+            if parsed_url.netloc.lower() not in allowed_domains:
+                return {
+                    'url': url,
+                    'content': '',
+                    'error': f'Invalid domain. Only {", ".join(allowed_domains)} are allowed.',
+                    'title': 'Error'
+                }
+        except Exception as e:
+            return {
+                'url': url,
+                'content': '',
+                'error': f'URL validation failed: {str(e)}',
+                'title': 'Error'
+            }
+        
         try:
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
