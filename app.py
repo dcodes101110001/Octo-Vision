@@ -173,13 +173,16 @@ with col2:
                 
                 # Show full content in a collapsed section
                 with st.expander("View full paste content"):
+                    content = result.get('content', '')
                     st.text_area(
                         "Content",
-                        value=result.get('content', '')[:5000],  # Limit to first 5000 chars for display
+                        value=content[:5000],  # Limit to first 5000 chars for display
                         height=300,
                         disabled=True,
                         key=f"content_{idx}"
                     )
+                    if len(content) > 5000:
+                        st.caption("⚠️ Content truncated to first 5000 characters for display.")
         
         # Export results
         st.markdown("---")
