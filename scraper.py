@@ -63,7 +63,13 @@ class PasteScraper:
                                 'url': f"https://pastebin.com/{paste_id}"
                             })
                 except Exception as e:
-                    print(f"Error scraping paste: {e}")
+                    pastes.append({
+                        'id': None,
+                        'title': 'Error',
+                        'content': '',
+                        'url': link_tag['href'] if 'link_tag' in locals() and link_tag else None,
+                        'error': str(e)
+                    })
                     continue
                     
         except Exception as e:
