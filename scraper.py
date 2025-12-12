@@ -99,7 +99,7 @@ class PasteScraper:
             parsed_url = urlparse(url)
             allowed_domains = ['pastebin.com', 'www.pastebin.com']
             
-            if not parsed_url.scheme in ['http', 'https']:
+            if parsed_url.scheme not in ['http', 'https']:
                 return {
                     'url': url,
                     'content': '',
