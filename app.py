@@ -7,7 +7,6 @@ import streamlit as st
 import pandas as pd
 from scraper import PasteScraper
 from scanner import KeywordScanner
-from io import StringIO
 
 # Page configuration
 st.set_page_config(
