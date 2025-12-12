@@ -4,7 +4,7 @@ Handles pattern matching and keyword detection
 """
 
 import re
-from typing import List, Dict
+from typing import List, Dict, Any
 import pandas as pd
 from io import StringIO
 
@@ -32,6 +32,9 @@ class KeywordScanner:
             
         Returns:
             List of keywords
+            
+        Raises:
+            ValueError: If CSV parsing fails
         """
         try:
             # Try to read CSV with pandas
@@ -42,9 +45,10 @@ class KeywordScanner:
                 keywords = df.iloc[:, 0].dropna().astype(str).tolist()
                 self.keywords = [k.strip() for k in keywords if k.strip()]
                 return self.keywords
-        except Exception as e:
-            print(f"Error loading CSV: {e}")
+            
             return []
+        except Exception as e:
+            raise ValueError(f"Failed to parse CSV file: {str(e)}") from e
     
     def load_keywords_from_list(self, keywords: List[str]):
         """
@@ -55,7 +59,7 @@ class KeywordScanner:
         """
         self.keywords = [k.strip() for k in keywords if k.strip()]
     
-    def scan_text(self, text: str) -> Dict[str, any]:
+    def scan_text(self, text: str) -> Dict[str, Any]:
         """
         Scan text for keywords and return matches
         
@@ -76,15 +80,13 @@ class KeywordScanner:
         matched_keywords = set()
         match_details = []
         
-        search_text = text if self.case_sensitive else text.lower()
-        
         for keyword in self.keywords:
-            search_keyword = keyword if self.case_sensitive else keyword.lower()
-            
             # Try regex pattern matching
             try:
-                pattern = re.compile(re.escape(search_keyword))
-                matches = list(pattern.finditer(search_text))
+                # Use IGNORECASE flag if not case sensitive to ensure correct positions
+                flags = 0 if self.case_sensitive else re.IGNORECASE
+                pattern = re.compile(re.escape(keyword), flags)
+                matches = list(pattern.finditer(text))
                 
                 if matches:
                     matched_keywords.add(keyword)
@@ -100,20 +102,38 @@ class KeywordScanner:
                             'position': match.start(),
                             'context': f"...{context}..."
                         })
-            except Exception as e:
-                # Fallback to simple string search
-                if search_keyword in search_text:
-                    matched_keywords.add(keyword)
-                    index = search_text.find(search_keyword)
-                    start = max(0, index - 50)
-                    end = min(len(text), index + len(keyword) + 50)
-                    context = text[start:end].replace('\n', ' ').strip()
+            except Exception:
+                # Fallback to simple string search with manual case handling
+                if self.case_sensitive:
+                    if keyword in text:
+                        matched_keywords.add(keyword)
+                        index = text.find(keyword)
+                        start = max(0, index - 50)
+                        end = min(len(text), index + len(keyword) + 50)
+                        context = text[start:end].replace('\n', ' ').strip()
+                        
+                        match_details.append({
+                            'keyword': keyword,
+                            'position': index,
+                            'context': f"...{context}..."
+                        })
+                else:
+                    # For case-insensitive, manually search for positions in original text
+                    search_keyword = keyword.lower()
+                    text_lower = text.lower()
                     
-                    match_details.append({
-                        'keyword': keyword,
-                        'position': index,
-                        'context': f"...{context}..."
-                    })
+                    if search_keyword in text_lower:
+                        matched_keywords.add(keyword)
+                        index = text_lower.find(search_keyword)
+                        start = max(0, index - 50)
+                        end = min(len(text), index + len(keyword) + 50)
+                        context = text[start:end].replace('\n', ' ').strip()
+                        
+                        match_details.append({
+                            'keyword': keyword,
+                            'position': index,
+                            'context': f"...{context}..."
+                        })
         
         return {
             'matches_found': len(matched_keywords) > 0,
@@ -122,7 +142,7 @@ class KeywordScanner:
             'match_details': match_details
         }
     
-    def scan_multiple_texts(self, texts: List[Dict[str, str]]) -> List[Dict[str, any]]:
+    def scan_multiple_texts(self, texts: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         """
         Scan multiple texts for keywords
         

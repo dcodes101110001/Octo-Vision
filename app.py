@@ -185,7 +185,9 @@ with col2:
         
         # Export results
         st.markdown("---")
-        if st.button("📥 Export Results as CSV"):
+        st.markdown("**📥 Export Results**")
+        st.caption("Note: Content preview in CSV export is limited to 500 characters per paste.")
+        if st.button("Export as CSV"):
             # Prepare data for export
             export_data = []
             for result in st.session_state.scan_results:
@@ -194,7 +196,7 @@ with col2:
                     'URL': result.get('url', 'N/A'),
                     'Matched Keywords': ', '.join(result['matched_keywords']),
                     'Match Count': result['match_count'],
-                    'Content Preview': result.get('content', '')[:500]
+                    'Content Preview': result.get('content', '')[:500]  # Limited to 500 chars
                 })
             
             df = pd.DataFrame(export_data)
