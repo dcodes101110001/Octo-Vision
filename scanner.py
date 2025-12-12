@@ -100,22 +100,37 @@ class KeywordScanner:
                             'context': f"...{context}..."
                         })
             except Exception:
-                # Fallback to simple string search
-                search_text = text if self.case_sensitive else text.lower()
-                search_keyword = keyword if self.case_sensitive else keyword.lower()
-                
-                if search_keyword in search_text:
-                    matched_keywords.add(keyword)
-                    index = search_text.find(search_keyword)
-                    start = max(0, index - 50)
-                    end = min(len(text), index + len(keyword) + 50)
-                    context = text[start:end].replace('\n', ' ').strip()
+                # Fallback to simple string search with manual case handling
+                if self.case_sensitive:
+                    if keyword in text:
+                        matched_keywords.add(keyword)
+                        index = text.find(keyword)
+                        start = max(0, index - 50)
+                        end = min(len(text), index + len(keyword) + 50)
+                        context = text[start:end].replace('\n', ' ').strip()
+                        
+                        match_details.append({
+                            'keyword': keyword,
+                            'position': index,
+                            'context': f"...{context}..."
+                        })
+                else:
+                    # For case-insensitive, manually search for positions in original text
+                    search_keyword = keyword.lower()
+                    text_lower = text.lower()
                     
-                    match_details.append({
-                        'keyword': keyword,
-                        'position': index,
-                        'context': f"...{context}..."
-                    })
+                    if search_keyword in text_lower:
+                        matched_keywords.add(keyword)
+                        index = text_lower.find(search_keyword)
+                        start = max(0, index - 50)
+                        end = min(len(text), index + len(keyword) + 50)
+                        context = text[start:end].replace('\n', ' ').strip()
+                        
+                        match_details.append({
+                            'keyword': keyword,
+                            'position': index,
+                            'context': f"...{context}..."
+                        })
         
         return {
             'matches_found': len(matched_keywords) > 0,
