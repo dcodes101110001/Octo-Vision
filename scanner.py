@@ -44,10 +44,9 @@ class KeywordScanner:
             if len(df.columns) > 0:
                 keywords = df.iloc[:, 0].dropna().astype(str).tolist()
                 self.keywords = [k.strip() for k in keywords if k.strip()]
-            else:
-                self.keywords = []
+                return self.keywords
             
-            return self.keywords
+            return []
         except Exception as e:
             raise ValueError(f"Failed to parse CSV file: {str(e)}") from e
     
