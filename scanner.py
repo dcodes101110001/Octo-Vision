@@ -4,8 +4,9 @@ Handles pattern matching and keyword detection
 """
 
 import re
-from typing import List, Dict, Set
+from typing import List, Dict
 import pandas as pd
+from io import StringIO
 
 
 class KeywordScanner:
@@ -34,7 +35,6 @@ class KeywordScanner:
         """
         try:
             # Try to read CSV with pandas
-            from io import StringIO
             df = pd.read_csv(StringIO(csv_content))
             
             # Get keywords from first column
