@@ -83,8 +83,7 @@ class KeywordScanner:
             
             # Try regex pattern matching
             try:
-                pattern = re.compile(re.escape(search_keyword), 
-                                   re.IGNORECASE if not self.case_sensitive else 0)
+                pattern = re.compile(re.escape(search_keyword))
                 matches = list(pattern.finditer(search_text))
                 
                 if matches:
