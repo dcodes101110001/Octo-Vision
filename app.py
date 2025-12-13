@@ -8,6 +8,9 @@ import pandas as pd
 from scraper import PasteScraper
 from scanner import KeywordScanner
 
+# Constants
+MAX_DISPLAY_CHARS = 5000  # Maximum characters to display in content preview
+
 # Page configuration
 st.set_page_config(
     page_title="Octo-Vision - Paste Site Scraper",
@@ -105,22 +108,39 @@ with col1:
             if not keywords:
                 st.warning("⚠️ Please add keywords first!")
             else:
-                with st.spinner(f"Scraping {num_pastes} recent pastes from Pastebin..."):
+                # Create progress bar and status text
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                try:
+                    status_text.text(f"Scraping {num_pastes} recent pastes from Pastebin...")
+                    progress_bar.progress(10)
+                    
                     pastes = st.session_state.scraper.scrape_pastebin_recent(limit=num_pastes)
                     
                     if pastes:
-                        st.success(f"✅ Scraped {len(pastes)} pastes")
+                        progress_bar.progress(60)
+                        status_text.text(f"✅ Scraped {len(pastes)} pastes. Now scanning for keywords...")
                         
-                        with st.spinner("Scanning for keywords..."):
-                            results = st.session_state.scanner.scan_multiple_texts(pastes)
-                            st.session_state.scan_results = results
-                            
-                            if results:
-                                st.success(f"🎯 Found matches in {len(results)} paste(s)!")
-                            else:
-                                st.info("ℹ️ No keyword matches found")
+                        results = st.session_state.scanner.scan_multiple_texts(pastes)
+                        st.session_state.scan_results = results
+                        
+                        progress_bar.progress(100)
+                        status_text.empty()
+                        progress_bar.empty()
+                        
+                        if results:
+                            st.success(f"🎯 Found matches in {len(results)} paste(s)!")
+                        else:
+                            st.info("ℹ️ No keyword matches found")
                     else:
+                        progress_bar.empty()
+                        status_text.empty()
                         st.error("❌ Failed to scrape pastes. Please try again later.")
+                except Exception as e:
+                    progress_bar.empty()
+                    status_text.empty()
+                    st.error(f"❌ Error during scraping: {str(e)}")
     
     else:  # Custom URL
         custom_url = st.text_input(
@@ -146,7 +166,7 @@ with col1:
                             if scan_result['matches_found']:
                                 paste_with_results = {**paste, **scan_result}
                                 st.session_state.scan_results = [paste_with_results]
-                                st.success(f"🎯 Found {scan_result['match_count']} keyword match(es)!")
+                                st.success(f"🎯 Found {scan_result['match_count']} keyword(s) with {scan_result['total_occurrences']} total occurrence(s)!")
                             else:
                                 st.info("ℹ️ No keyword matches found")
                                 st.session_state.scan_results = []
@@ -163,7 +183,8 @@ with col2:
             with st.expander(f"🔍 Match #{idx}: {result.get('title', 'Untitled')}", expanded=(idx == 1)):
                 st.markdown(f"**URL:** {result.get('url', 'N/A')}")
                 st.markdown(f"**Matched Keywords:** {', '.join(result['matched_keywords'])}")
-                st.markdown(f"**Total Matches:** {result['match_count']}")
+                st.markdown(f"**Unique Keywords Matched:** {result['match_count']}")
+                st.markdown(f"**Total Occurrences:** {result.get('total_occurrences', result['match_count'])}")
                 
                 st.markdown("**Match Details:**")
                 for match_detail in result.get('match_details', [])[:5]:  # Show first 5 matches
@@ -173,15 +194,20 @@ with col2:
                 # Show full content in a collapsed section
                 with st.expander("View full paste content"):
                     content = result.get('content', '')
+                    content_length = len(content)
+                    display_length = min(content_length, MAX_DISPLAY_CHARS)
+                    
+                    st.caption(f"Content length: {content_length:,} characters")
+                    
                     st.text_area(
                         "Content",
-                        value=content[:5000],  # Limit to first 5000 chars for display
+                        value=content[:MAX_DISPLAY_CHARS],
                         height=300,
                         disabled=True,
                         key=f"content_{idx}"
                     )
-                    if len(content) > 5000:
-                        st.caption("⚠️ Content truncated to first 5000 characters for display.")
+                    if content_length > MAX_DISPLAY_CHARS:
+                        st.warning(f"⚠️ Content truncated: showing first {display_length:,} of {content_length:,} characters ({(display_length/content_length)*100:.1f}%)")
         
         # Export results
         st.markdown("---")
@@ -191,12 +217,15 @@ with col2:
             # Prepare data for export
             export_data = []
             for result in st.session_state.scan_results:
+                content = result.get('content', '')
                 export_data.append({
                     'Title': result.get('title', 'Untitled'),
                     'URL': result.get('url', 'N/A'),
                     'Matched Keywords': ', '.join(result['matched_keywords']),
-                    'Match Count': result['match_count'],
-                    'Content Preview': result.get('content', '')[:500]  # Limited to 500 chars
+                    'Unique Keywords': result['match_count'],
+                    'Total Occurrences': result.get('total_occurrences', result['match_count']),
+                    'Content Length': len(content),
+                    'Content Preview': content[:500]  # Limited to 500 chars
                 })
             
             df = pd.DataFrame(export_data)

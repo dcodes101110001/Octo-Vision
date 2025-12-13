@@ -64,23 +64,14 @@ class PasteScraper:
                                 'url': f"https://pastebin.com/{paste_id}"
                             })
                 except Exception as e:
-                    pastes.append({
-                        'id': None,
-                        'title': 'Error',
-                        'content': '',
-                        'url': link_tag['href'] if 'link_tag' in locals() and link_tag else None,
-                        'error': str(e)
-                    })
+                    # Log error but don't add error entries to results
+                    # This prevents error entries from appearing in scan results
                     continue
                     
         except Exception as e:
-            pastes.append({
-                'id': '',
-                'title': 'Error accessing Pastebin',
-                'content': '',
-                'url': '',
-                'error': str(e)
-            })
+            # Return empty list on major errors rather than error entries
+            # This prevents error entries from appearing in scan results
+            return []
         
         return pastes
     
